@@ -1,4 +1,4 @@
-# Jarvis : Assistant DBA Senior (RAG)
+# Jarvis : Assistant DBA Senior (RAG V2)
 
 Jarvis est un assistant virtuel conversationnel propulsé par l'IA, conçu spécifiquement pour assister les Administrateurs de Bases de Données (DBA). Il exploite une architecture **RAG (Retrieval-Augmented Generation) Hybride**, garantissant des réponses techniques ultra-précises et sourcées à partir de la documentation officielle de **PostgreSQL** et **SQL Server**.
 
@@ -18,8 +18,56 @@ Jarvis est un assistant virtuel conversationnel propulsé par l'IA, conçu spéc
 - **IA Locale** : Ollama (modèle `qwen2.5-coder:7b` pour le texte, `nomic-embed-text` pour les vecteurs)
 - **Frameworks** : LangChain, Pydantic, Tenacity
 - **Frontend** : Streamlit
+- **Déploiement** : Docker & Docker Compose
 
-## Configuration & Installation
+---
+
+## Déploiement avec Docker (Recommandé)
+
+Cette méthode déploie l'intégralité de l'architecture (Base de données, Moteur IA, Interface Web) dans un réseau virtuel isolé.
+
+### Prérequis
+- Docker et Docker Compose installés.
+- **NVIDIA Container Toolkit** installé sur l'hôte (indispensable pour que le conteneur Ollama puisse utiliser votre carte graphique GPU).
+
+### 1. Configuration
+Créez un fichier `.env` à la racine du projet :
+```env
+DB_HOST=db
+DB_PORT=5432
+DB_NAME=dbname
+DB_USER=dbuser
+DB_PASSWORD=dbpassword
+OLLAMA_BASE_URL=http://ollama:11434
+```
+
+### 2. Lancement de l'infrastructure
+Construisez et démarrez les conteneurs en arrière-plan :
+```bash
+docker compose up -d --build
+```
+
+### 3. Initialisation des modèles IA
+Lors du premier lancement, téléchargez les modèles dans le conteneur Ollama :
+```bash
+docker exec -it jarvis_ollama ollama pull qwen2.5-coder:7b
+docker exec -it jarvis_ollama ollama pull nomic-embed-text
+```
+
+### 4. Migrations de la Base de Données
+Initialisez le schéma Full-Text Search et les triggers dans le conteneur de l'application :
+```bash
+docker exec -it jarvis_app python migrate_fts.py
+docker exec -it jarvis_app python migrate_fts_french.py
+```
+
+L'application est maintenant accessible sur **http://localhost:8501** !
+
+---
+
+## Installation Locale (Mode Développement)
+
+Si vous souhaitez développer ou faire tourner l'application sans Docker.
 
 1. **Cloner le projet et préparer l'environnement :**
    ```bash
@@ -30,8 +78,7 @@ Jarvis est un assistant virtuel conversationnel propulsé par l'IA, conçu spéc
    pip install -r requirements.txt
    ```
 
-2. **Configurer les variables d'environnement :**
-   Créez un fichier `.env` à la racine du projet (ignoré par Git) :
+2. **Configurer les variables d'environnement (`.env`) :**
    ```env
    DB_HOST=localhost
    DB_PORT=5432
@@ -42,30 +89,31 @@ Jarvis est un assistant virtuel conversationnel propulsé par l'IA, conçu spéc
    ```
 
 3. **Migrations Base de Données :**
-   Assurez-vous que l'extension `pgvector` est installée sur PostgreSQL, puis exécutez les migrations de Full-Text Search :
+   Assurez-vous que l'extension `pgvector` est installée sur votre serveur PostgreSQL, puis exécutez :
    ```bash
    python migrate_fts.py
    python migrate_fts_french.py
    ```
 
-## Utilisation
+---
 
-### 1. Ingestion de la documentation (Base de Connaissances)
-Utilisez le CLI d'ingestion pour peupler votre base vectorielle avec la documentation technique :
+## Utilisation (Ingestion de données)
 
+Pour que l'IA puisse répondre, vous devez peupler la base de connaissances avec les documentations officielles.
+
+**Si vous utilisez Docker :**
 ```bash
 # Pour la documentation PostgreSQL (HTML)
-python -m jarvis.ingestion.cli --engine postgres --docs-dir /chemin/vers/docs_postgres
+docker exec -it jarvis_app python -m jarvis.ingestion.cli --engine postgres --docs-dir /chemin/interne/vers/docs_postgres
 
 # Pour la documentation SQL Server (Markdown)
-python -m jarvis.ingestion.cli --engine sqlserver --docs-dir /chemin/vers/docs_sqlserver
+docker exec -it jarvis_app python -m jarvis.ingestion.cli --engine sqlserver --docs-dir /chemin/interne/vers/docs_sqlserver
 ```
+*(Note : Pensez à monter un volume dans votre `docker-compose.yml` si vos documents sont sur votre machine hôte).*
 
-### 2. Lancement de l'Application Web
-Démarrez l'interface conversationnelle Streamlit :
-
+**Si vous êtes en local :**
 ```bash
-streamlit run jarvis/ui/app.py
+python -m jarvis.ingestion.cli --engine postgres --docs-dir /chemin/vers/docs_postgres
 ```
 
 ## Architecture du projet

@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # 1. La Base de Données (PostgreSQL + pgvector)
+  db:
+    image: ankane/pgvector:latest
+    container_name: jarvis_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-bdvm}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-super_password_securise}
+      POSTGRES_DB: ${DB_NAME:-lab_dba}
+    ports:
+      - "5432:5432" # Pour pouvoir t'y connecter avec DBeaver/PgAdmin
+    volumes:
+      - jarvis_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Le Moteur IA (Ollama)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: jarvis_ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - jarvis_ollama_data:/root/.ollama
+    # MAGIE : Accès direct à la carte graphique Nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # 3. L'Application Web (Jarvis)
+  app:
+    build: .
+    container_name: jarvis_app
+    restart: unless-stopped
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/app/data # Persistance du cache FlashRank/Embeddings en local
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-lab_dba}
+      - DB_USER=${DB_USER:-bdvm}
+      - DB_PASSWORD=${DB_PASSWORD:-super_password_securise}
+      - OLLAMA_BASE_URL=http://ollama:11434
+    depends_on:
+      db:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+
+volumes:
+  jarvis_pgdata:
+  jarvis_ollama_data:
