@@ -36,6 +36,7 @@ ENV/
 # ==========================================
 # On ignore tout le cache généré (Embeddings SQLite et modèles FlashRank ONNX)
 data/cache/
+.cache/
 
 # ==========================================
 # Fichiers OS
