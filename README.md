@@ -1,4 +1,4 @@
-# Jarvis : Assistant DBA Senior (RAG V2)
+# Jarvis : Assistant DBA Senior (RAG)
 
 Jarvis est un assistant virtuel conversationnel propulsé par l'IA, conçu spécifiquement pour assister les Administrateurs de Bases de Données (DBA). Il exploite une architecture **RAG (Retrieval-Augmented Generation) Hybride**, garantissant des réponses techniques ultra-précises et sourcées à partir de la documentation officielle de **PostgreSQL** et **SQL Server**.
 
@@ -46,22 +46,16 @@ Construisez et démarrez les conteneurs en arrière-plan :
 ```bash
 docker compose up -d --build
 ```
+*Note : Grâce au fichier `init.sql`, la base de données, les schémas vectoriels et les triggers Full-Text Search s'initialisent **automatiquement** au premier démarrage du conteneur Postgres.*
 
 ### 3. Initialisation des modèles IA
-Lors du premier lancement, téléchargez les modèles dans le conteneur Ollama :
+Lors du tout premier lancement, téléchargez les modèles dans le conteneur Ollama :
 ```bash
 docker exec -it jarvis_ollama ollama pull qwen2.5-coder:7b
 docker exec -it jarvis_ollama ollama pull nomic-embed-text
 ```
 
-### 4. Migrations de la Base de Données
-Initialisez le schéma Full-Text Search et les triggers dans le conteneur de l'application :
-```bash
-docker exec -it jarvis_app python migrate_fts.py
-docker exec -it jarvis_app python migrate_fts_french.py
-```
-
-L'application est maintenant accessible sur **http://localhost:8501** !
+**L'application est maintenant accessible sur http://localhost:8501 !**
 
 ---
 
@@ -82,14 +76,14 @@ Si vous souhaitez développer ou faire tourner l'application sans Docker.
    ```env
    DB_HOST=localhost
    DB_PORT=5432
-   DB_NAME=dbname
-   DB_USER=dbuser
-   DB_PASSWORD=dbpassword
+   DB_NAME=lab_dba
+   DB_USER=bdvm
+   DB_PASSWORD=votre_mot_de_passe_securise
    OLLAMA_BASE_URL=http://localhost:11434
    ```
 
 3. **Migrations Base de Données :**
-   Assurez-vous que l'extension `pgvector` est installée sur votre serveur PostgreSQL, puis exécutez :
+   Assurez-vous que l'extension `pgvector` est installée sur votre serveur PostgreSQL local, puis exécutez les scripts de migration :
    ```bash
    python migrate_fts.py
    python migrate_fts_french.py
@@ -104,12 +98,12 @@ Pour que l'IA puisse répondre, vous devez peupler la base de connaissances avec
 **Si vous utilisez Docker :**
 ```bash
 # Pour la documentation PostgreSQL (HTML)
-docker exec -it jarvis_app python -m jarvis.ingestion.cli --engine postgres --docs-dir /chemin/interne/vers/docs_postgres
+docker exec -it jarvis_app python -m jarvis.ingestion.cli --engine postgres --docs-dir /app/data/docs_postgres
 
 # Pour la documentation SQL Server (Markdown)
-docker exec -it jarvis_app python -m jarvis.ingestion.cli --engine sqlserver --docs-dir /chemin/interne/vers/docs_sqlserver
+docker exec -it jarvis_app python -m jarvis.ingestion.cli --engine sqlserver --docs-dir /app/data/docs_sqlserver
 ```
-*(Note : Pensez à monter un volume dans votre `docker-compose.yml` si vos documents sont sur votre machine hôte).*
+*(Note : Pensez à monter un volume dans votre `docker-compose.yml` si vos documents sont sur votre machine hôte pour qu'ils soient accessibles dans `/app/data/`).*
 
 **Si vous êtes en local :**
 ```bash

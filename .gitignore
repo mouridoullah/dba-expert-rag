@@ -22,7 +22,8 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-
+migrate_fts.py
+migrate_fts_french.py
 # ==========================================
 # Environnements virtuels
 # ==========================================
