@@ -76,20 +76,11 @@ Si vous souhaitez développer ou faire tourner l'application sans Docker.
    ```env
    DB_HOST=localhost
    DB_PORT=5432
-   DB_NAME=lab_dba
-   DB_USER=bdvm
-   DB_PASSWORD=votre_mot_de_passe_securise
+   DB_NAME=dbname
+   DB_USER=dbuser
+   DB_PASSWORD=dbpassword
    OLLAMA_BASE_URL=http://localhost:11434
    ```
-
-3. **Migrations Base de Données :**
-   Assurez-vous que l'extension `pgvector` est installée sur votre serveur PostgreSQL local, puis exécutez les scripts de migration :
-   ```bash
-   python migrate_fts.py
-   python migrate_fts_french.py
-   ```
-
----
 
 ## Utilisation (Ingestion de données)
 
